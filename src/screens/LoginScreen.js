@@ -1,3 +1,10 @@
+/**
+ * LoginScreen.js
+ * Pantalla de entrada al juego.
+ *
+ * El jugador ingresa su nombre y se conecta al servidor WebSocket en Railway.
+ * Al conectarse exitosamente, el servidor asigna un ID único y redirige al Lobby.
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, ScrollView, Alert,
