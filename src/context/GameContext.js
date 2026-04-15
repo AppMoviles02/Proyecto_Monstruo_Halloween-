@@ -1,9 +1,26 @@
+/**
+ * GameContext.js
+ * Contexto global del juego Halloween Monsters.
+ *
+ * Gestiona la conexión WebSocket con el servidor Railway y distribuye
+ * el estado del juego (jugadores, monstruos, turno, fase) a todos los
+ * componentes de la app mediante React Context.
+ *
+ * Uso:
+ *   import { useGame } from '../context/GameContext';
+ *   const { jugadores, atacar } = useGame();
+ */
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 
+/** URL del servidor WebSocket en Railway (reemplaza servidor Rust local) */
 const WS_URL = 'wss://halloween-game-server-production.up.railway.app';
 
 const GameContext = createContext(null);
 
+/**
+ * Proveedor del contexto del juego.
+ * Debe envolver toda la navegación de la app (ver App.js).
+ */
 export const GameProvider = ({ children }) => {
   const ws           = useRef(null);
   const jugadorIdRef = useRef(null); // ID estable del jugador actual (ip:port asignado por servidor)
@@ -17,17 +34,26 @@ export const GameProvider = ({ children }) => {
   const [mensajes, setMensajes]       = useState([]);
   const [ganador, setGanador]         = useState(null);
 
-  // Actualiza el estado del jugador propio a partir de una lista de jugadores
+  /**
+   * Sincroniza el estado del jugador propio buscando su ID en la lista recibida del servidor.
+   * @param {Array} lista - Lista de jugadores enviada por el servidor
+   */
   const syncJugador = (lista) => {
     if (!jugadorIdRef.current) return;
     const yo = lista.find(j => j.id === jugadorIdRef.current);
     if (yo) setJugador(yo);
   };
 
+  /** Agrega un mensaje al log de eventos. Mantiene los últimos 50. */
   const agregarMensaje = (msg) => {
     setMensajes(prev => [...prev.slice(-50), msg]);
   };
 
+  /**
+   * Abre la conexión WebSocket y envía el mensaje 'unirse' con el nombre del jugador.
+   * @param {string} nombre - Nombre visible del jugador
+   * @param {Function} [onConectado] - Callback opcional al establecer conexión
+   */
   const conectar = (nombre, onConectado) => {
     ws.current = new WebSocket(WS_URL);
 
@@ -82,9 +108,11 @@ export const GameProvider = ({ children }) => {
         agregarMensaje('🎮 ¡El juego comenzó!');
         break;
 
-      case 'ataque':
-        agregarMensaje(`⚔️ Ataque a ${data.monstruo}: -${data.dano} HP (${data.hp_restante} restante)`);
+      case 'ataque': {
+        const criticoLabel = data.critico ? ' 💥 ¡CRÍTICO!' : '';
+        agregarMensaje(`⚔️ ${data.atacante} → ${data.monstruo}: -${data.dano} HP${criticoLabel} (${data.hp_restante} restante)`);
         break;
+      }
 
       case 'monstruo_eliminado':
         agregarMensaje(`💀 ${data.monstruo} eliminado! +${data.puntos_ganados} pts`);
@@ -96,6 +124,14 @@ export const GameProvider = ({ children }) => {
         setTurnoActual(data.turno_actual);
         setFase(data.fase);
         syncJugador(data.jugadores); // mantiene armas, puntos y HP del jugador propio actualizados
+        break;
+
+      case 'jugador_desconectado':
+        agregarMensaje(`📵 ${data.nombre} se desconectó — esperando ${data.gracia}s...`);
+        break;
+
+      case 'jugador_reconectado':
+        agregarMensaje(`🔁 ${data.nombre} reconectó`);
         break;
 
       case 'intercambio':
@@ -117,18 +153,38 @@ export const GameProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Envía un mensaje JSON al servidor WebSocket si la conexión está abierta.
+   * @param {Object} mensaje - Objeto con campo 'tipo' y parámetros del mensaje
+   */
   const enviar = (mensaje) => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(mensaje));
     }
   };
 
+  /** Envía solicitud para iniciar la partida (requiere mínimo 2 jugadores en el lobby). */
   const iniciarJuego = () => enviar({ tipo: 'iniciar_juego' });
 
+  /**
+   * Envía un ataque al servidor. Solo funciona si es el turno del jugador.
+   * @param {string} monstruoId - ID del monstruo objetivo (ej. 'm1')
+   * @param {string} arma - Arma a usar: 'daga' | 'granada' | 'dinamita'
+   */
   const atacar = (monstruoId, arma) => enviar({ tipo: 'atacar', monstruo_id: monstruoId, arma });
 
+  /**
+   * Forma una alianza entre jugadores.
+   * @param {string} alias - Nombre de la alianza
+   * @param {string[]} miembros - Array de IDs de jugadores aliados
+   */
   const formarAlianza = (alias, miembros) => enviar({ tipo: 'alianza', alias, miembros });
 
+  /**
+   * Transfiere puntos a otro jugador de la misma alianza.
+   * @param {string} paraId - ID del jugador receptor
+   * @param {number} cantidad - Cantidad de puntos a transferir
+   */
   const intercambiar = (paraId, cantidad) => enviar({ tipo: 'intercambiar', para: paraId, cantidad });
 
   return (
