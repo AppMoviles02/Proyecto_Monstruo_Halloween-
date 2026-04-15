@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎃 Monstruos de Halloween — Espectador en Vivo</title>
+  <style>
+    /* ─── Reset & Variables ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0015;
+      --bg2:       #130828;
+      --card:      #1e0d38;
+      --card2:     #271245;
+      --border:    #3d1f6b;
+      --orange:    #ff6b35;
+      --orange2:   #ff8c5a;
+      --gold:      #ffd700;
+      --gold2:     #ffec6e;
+      --green:     #39ff14;
+      --red:       #ff073a;
+      --blue:      #00d4ff;
+      --text:      #f0e6ff;
+      --muted:     #9a80c0;
+      --radius:    12px;
+      --glow-o:    0 0 12px #ff6b3588, 0 0 24px #ff6b3544;
+      --glow-g:    0 0 12px #ffd70088, 0 0 24px #ffd70044;
+      --glow-b:    0 0 12px #00d4ff88, 0 0 24px #00d4ff44;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ─── Background Stars ──────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 15%, #fff9 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 60%, #fff7 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 30%, #fffc 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 80%, #fff8 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 20%, #fffa 0%, transparent 100%),
+        radial-gradient(1px 1px at 82% 55%, #fff9 0%, transparent 100%),
+        radial-gradient(1px 1px at 92% 10%, #fffc 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 85%, #fff7 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 45%, #fffa 0%, transparent 100%),
+        radial-gradient(2px 2px at 35% 70%, #ffd70055 0%, transparent 100%),
+        radial-gradient(2px 2px at 75% 90%, #ff6b3544 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, #3d0a6622 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, #1a0a4422 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 80%, #2d0a3322 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── Animations ────────────────────────────────────────── */
+    @keyframes flicker {
+      0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; text-shadow: var(--glow-g); }
+      20%, 24%, 55% { opacity: 0.7; text-shadow: none; }
+    }
+
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 8px var(--gold), 0 0 16px #ffd70044; border-color: var(--gold); }
+      50%       { box-shadow: 0 0 20px var(--gold), 0 0 40px #ffd70066; border-color: var(--gold2); }
+    }
+
+    @keyframes slide-in {
+      from { transform: translateX(60px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes hp-flash {
+      0%, 100% { filter: brightness(1); }
+      50%       { filter: brightness(2) saturate(2); }
+    }
+
+    @keyframes death-shake {
+      0%   { transform: translateX(0); }
+      25%  { transform: translateX(-6px) rotate(-1deg); }
+      50%  { transform: translateX(6px) rotate(1deg); }
+      75%  { transform: translateX(-4px); }
+      100% { transform: translateX(0); opacity: 0.4; }
+    }
+
+    @keyframes winner-glow {
+      0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 12px #ffd700); }
+      50%       { transform: scale(1.08); filter: drop-shadow(0 0 28px #ffd700) drop-shadow(0 0 50px #ff6b35); }
+    }
+
+    @keyframes bat-fly {
+      0%   { transform: translateX(-100px) translateY(0)   scaleX(1);  opacity: 0; }
+      10%  { opacity: 1; }
+      50%  { transform: translateX(50vw)   translateY(-40px) scaleX(-1); }
+      90%  { opacity: 1; }
+      100% { transform: translateX(110vw)  translateY(20px)  scaleX(1);  opacity: 0; }
+    }
+
+    @keyframes connecting-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes rank-up {
+      0%   { background: transparent; }
+      30%  { background: #ffd70033; }
+      100% { background: transparent; }
+    }
+
+    /* ─── Bats decoration ───────────────────────────────────── */
+    .bat {
+      position: fixed;
+      font-size: 20px;
+      pointer-events: none;
+      z-index: 1;
+      animation: bat-fly linear infinite;
+      opacity: 0;
+    }
+    .bat:nth-child(1) { top: 10%;  animation-duration: 14s; animation-delay: 2s; }
+    .bat:nth-child(2) { top: 35%;  animation-duration: 18s; animation-delay: 7s; }
+    .bat:nth-child(3) { top: 70%;  animation-duration: 22s; animation-delay: 12s; }
+
+    /* ─── Layout ────────────────────────────────────────────── */
+    #app {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      gap: 14px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ─── Header ────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 16px 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    .header-title {
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 1px;
+      animation: flicker 6s infinite;
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── Status Badge ──────────────────────────────────────── */
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      border: 1px solid;
+    }
+
+    .badge.conectado  { background: #003322; color: var(--green); border-color: var(--green);  box-shadow: var(--glow-b); }
+    .badge.desconect  { background: #330011; color: var(--red);   border-color: var(--red);    }
+    .badge.conectando { background: #1a1a00; color: var(--gold);  border-color: var(--gold);   }
+
+    .badge-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .badge.conectado .badge-dot  { animation: pulse-border 1.4s ease-in-out infinite; box-shadow: 0 0 6px currentColor; }
+    .badge.conectando .badge-dot { animation: connecting-spin 1s linear infinite; border-radius: 0; }
+
+    /* ─── Fase Badge ────────────────────────────────────────── */
+    .fase-badge {
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .fase-badge.juego { color: var(--orange);  border-color: var(--orange); background: #2a0e00; box-shadow: var(--glow-o); }
+    .fase-badge.fin   { color: var(--gold);    border-color: var(--gold);   background: #2a2000; box-shadow: var(--glow-g); }
+
+    /* ─── Turn Banner ───────────────────────────────────────── */
+    #turno-banner {
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      background: var(--card);
+      text-align: center;
+      font-size: clamp(14px, 2.5vw, 20px);
+      font-weight: 800;
+      color: var(--muted);
+      transition: all 0.4s ease;
+    }
+    #turno-banner.activo {
+      border-color: var(--gold);
+      background: #251200;
+      color: var(--gold);
+      animation: pulse-border 1.5s ease-in-out infinite;
+    }
+
+    /* ─── Main Grid ─────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      flex: 1;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .col-eventos { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .col-eventos { grid-column: auto; }
+    }
+
+    /* ─── Column Card ───────────────────────────────────────── */
+    .col {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 320px;
+    }
+
+    .col-header {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .col-header span { margin-right: 6px; }
+
+    /* ─── Monster Card ──────────────────────────────────────── */
+    .monster-card {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: all 0.3s ease;
+      animation: fade-in 0.4s ease;
+    }
+
+    .monster-card.dead {
+      opacity: 0.4;
+      filter: grayscale(0.8);
+      border-color: #333;
+      animation: death-shake 0.5s ease forwards;
+    }
+
+    .monster-card.hit {
+      animation: hp-flash 0.3s ease;
+    }
+
+    .monster-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .monster-name {
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .monster-emoji { font-size: 22px; }
+
+    .monster-hp {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .hp-track {
+      height: 8px;
+      background: #1a1a2e;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .hp-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease;
+    }
+
+    .monster-pts {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .skull-overlay {
+      display: none;
+      font-size: 18px;
+      text-align: center;
+    }
+    .monster-card.dead .skull-overlay { display: block; }
+    .monster-card.dead .hp-track      { display: none; }
+
+    /* ─── Player Row ────────────────────────────────────────── */
+    .player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--card2);
+      border-radius: 8px;
+      border: 1px solid transparent;
+      transition: all 0.3s ease;
+      animation: fade-in 0.4s ease;
+    }
+
+    .player-row.active-turn {
+      border-color: var(--gold);
+      background: #251200;
+      box-shadow: 0 0 12px #ffd70033;
+      animation: pulse-border 1.5s ease-in-out infinite;
+    }
+
+    .player-rank {
+      font-size: 18px;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .player-info { flex: 1; min-width: 0; }
+
+    .player-name {
+      font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .player-pts {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .pts-change {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 999px;
+      margin-left: 4px;
+      animation: fade-in 0.3s ease;
+    }
+    .pts-change.up   { background: #003311; color: var(--green); }
+    .pts-change.down { background: #330011; color: var(--red);   }
+
+    /* ─── Event Feed ────────────────────────────────────────── */
+    #eventos-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow-y: auto;
+      max-height: 420px;
+      padding-right: 4px;
+    }
+
+    #eventos-list::-webkit-scrollbar { width: 4px; }
+    #eventos-list::-webkit-scrollbar-track { background: transparent; }
+    #eventos-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      animation: slide-in 0.3s ease;
+      border-left: 3px solid;
+    }
+
+    .event-item.tipo-unirse   { background: #001a0d; border-color: var(--green);  color: #b0ffcc; }
+    .event-item.tipo-ataque   { background: #1a0800; border-color: var(--orange); color: #ffc4a0; }
+    .event-item.tipo-muerte   { background: #1a0008; border-color: var(--red);    color: #ffaaaa; }
+    .event-item.tipo-alianza  { background: #00101a; border-color: var(--blue);   color: #a0e8ff; }
+    .event-item.tipo-puntos   { background: #1a1500; border-color: var(--gold);   color: #fff0a0; }
+    .event-item.tipo-sistema  { background: var(--card2); border-color: var(--border); color: var(--muted); }
+
+    .event-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .event-text { line-height: 1.4; }
+    .event-time { font-size: 10px; color: var(--muted); margin-left: auto; flex-shrink: 0; }
+
+    /* ─── Empty State ───────────────────────────────────────── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 32px 16px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      flex: 1;
+    }
+
+    .empty-state .icon { font-size: 36px; opacity: 0.5; }
+
+    /* ─── Stats Bar ─────────────────────────────────────────── */
+    .stats-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stat-pill .label { color: var(--muted); font-weight: 400; }
+    .stat-pill .value { color: var(--text); }
+
+    /* ─── Winner Overlay ────────────────────────────────────── */
+    #winner-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000cc;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+
+    #winner-overlay.visible { display: flex; }
+
+    .winner-card {
+      background: var(--card);
+      border: 2px solid var(--gold);
+      border-radius: 20px;
+      padding: 40px 48px;
+      text-align: center;
+      box-shadow: 0 0 60px #ffd70066, 0 0 120px #ffd70022;
+      max-width: 480px;
+      width: 90%;
+      animation: fade-in 0.6s ease;
+    }
+
+    .winner-crown {
+      font-size: 72px;
+      animation: winner-glow 2s ease-in-out infinite;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .winner-label {
+      font-size: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .winner-name {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: var(--glow-g);
+      margin-bottom: 24px;
+    }
+
+    .winner-scores {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .winner-score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--card2);
+      border-radius: 8px;
+    }
+
+    .winner-medal { font-size: 20px; width: 28px; text-align: center; }
+    .winner-player-name { flex: 1; font-weight: 700; }
+    .winner-player-pts  { font-weight: 900; color: var(--gold); }
+
+    .btn-close {
+      padding: 12px 32px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+    .btn-close:hover { filter: brightness(1.2); }
+
+    /* ─── Connecting Screen ─────────────────────────────────── */
+    #connecting-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: connecting-spin 0.8s linear infinite;
+    }
+
+    .connecting-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--gold);
+    }
+
+    .connecting-sub {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .connecting-screen-hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Bats -->
+  <div class="bat">🦇</div>
+  <div class="bat">🦇</div>
+  <div class="bat">🦇</div>
+
+  <!-- Connecting Screen -->
+  <div id="connecting-screen">
+    <div style="font-size:64px">🎃</div>
+    <div class="spinner"></div>
+    <div class="connecting-title">Conectando al servidor...</div>
+    <div class="connecting-sub" id="conn-msg">wss://halloween-game-server-production.up.railway.app</div>
+  </div>
+
+  <!-- Winner Overlay -->
+  <div id="winner-overlay">
+    <div class="winner-card">
+      <span class="winner-crown">👑</span>
+      <div class="winner-label">¡Ganador del Juego!</div>
+      <div class="winner-name" id="winner-name">—</div>
+      <div class="winner-scores" id="winner-scores"></div>
+      <button class="btn-close" onclick="document.getElementById('winner-overlay').classList.remove('visible')">
+        Ver Tablero
+      </button>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app">
+
+    <!-- Header -->
+    <header>
+      <div class="header-title">
+        <h1>🎃 Monstruos de Halloween</h1>
+        <div class="subtitle">El Plan del Diablo · T2 E05 · Espectador en Vivo</div>
+      </div>
+      <div class="header-right">
+        <div class="stats-bar">
+          <div class="stat-pill"><span class="label">Jugadores</span><span class="value" id="stat-jugadores">0</span></div>
+          <div class="stat-pill"><span class="label">Monstruos vivos</span><span class="value" id="stat-monstruos">—</span></div>
+          <div class="stat-pill"><span class="label">Turno</span><span class="value" id="stat-turno">#—</span></div>
+        </div>
+        <div class="badge desconect" id="conn-badge">
+          <div class="badge-dot"></div>
+          <span id="conn-text">Desconectado</span>
+        </div>
+        <div class="fase-badge" id="fase-badge">⏳ Espera</div>
+      </div>
+    </header>
+
+    <!-- Turn Banner -->
+    <div id="turno-banner">⏳ Esperando que inicie el juego...</div>
+
+    <!-- Grid -->
+    <div class="grid">
+
+      <!-- Monsters -->
+      <div class="col">
+        <div class="col-header"><span>👹</span>Monstruos</div>
+        <div id="monsters-list">
+          <div class="empty-state"><div class="icon">🌑</div>Esperando inicio del juego</div>
+        </div>
+      </div>
+
+      <!-- Players -->
+      <div class="col">
+        <div class="col-header"><span>👥</span>Jugadores</div>
+        <div id="players-list">
+          <div class="empty-state"><div class="icon">🌑</div>Nadie conectado aún</div>
+        </div>
+      </div>
+
+      <!-- Events -->
+      <div class="col col-eventos">
+        <div class="col-header"><span>📜</span>Eventos en Vivo</div>
+        <div id="eventos-list">
+          <div class="empty-state"><div class="icon">🌑</div>Sin eventos aún</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ─── Configuración ─────────────────────────────────────────
+    const WS_URL       = 'wss://halloween-game-server-production.up.railway.app';
+    const RECONNECT_MS = 4000;
+    const MEDALS       = ['🥇','🥈','🥉'];
+
+    // ─── Estado del juego ──────────────────────────────────────
+    let state = {
+      fase:        'espera',
+      turnoActual: '',
+      turnoIndex:  0,
+      jugadores:   {},   // id → jugador
+      monstruos:   [],
+      alianzas:    {},
+      totalTurnos: 0,
+    };
+
+    let prevPuntos = {}; // para detectar cambios de puntos
+
+    // ─── WebSocket ─────────────────────────────────────────────
+    let ws = null;
+
+    function conectar() {
+      setBadge('conectando', '⟳ Conectando...');
+      try {
+        ws = new WebSocket(WS_URL);
+      } catch(e) {
+        setTimeout(conectar, RECONNECT_MS);
+        return;
+      }
+
+      ws.onopen = () => {
+        document.getElementById('connecting-screen').classList.add('connecting-screen-hidden');
+        setBadge('conectado', '● En Vivo');
+        addEvent('sistema', '🔌', 'Conectado al servidor como espectador');
+      };
+
+      ws.onclose = () => {
+        setBadge('desconect', '✕ Desconectado');
+        addEvent('sistema', '🔌', 'Conexión perdida — reconectando...');
+        setTimeout(conectar, RECONNECT_MS);
+      };
+
+      ws.onerror = () => {
+        setBadge('desconect', '✕ Error');
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          dispatch(data);
+        } catch(err) {
+          console.warn('WS parse error:', e.data);
+        }
+      };
+    }
+
+    // ─── Dispatcher de eventos ─────────────────────────────────
+    function dispatch(data) {
+      switch (data.tipo) {
+
+        case 'jugador_unido':
+          state.jugadores = {};
+          data.jugadores.forEach(j => { state.jugadores[j.id] = j; });
+          addEvent('unirse', '👤', `${data.jugador.nombre} se unió al juego`);
+          renderPlayers();
+          updateStats();
+          break;
+
+        case 'alianza_formada':
+          state.alianzas = data.alianzas;
+          const miembros = Object.values(state.jugadores)
+            .filter(j => data.alianzas[data.alias]?.includes(j.id))
+            .map(j => j.nombre).join(', ');
+          addEvent('alianza', '🤝', `Alianza formada: ${data.alias} (${miembros})`);
+          break;
+
+        case 'juego_iniciado':
+          state.fase        = 'juego';
+          state.monstruos   = data.monstruos;
+          state.turnoActual = data.turno_actual;
+          state.turnoIndex  = 1;
+          data.jugadores.forEach(j => { state.jugadores[j.id] = j; });
+          addEvent('sistema', '🎮', '¡El juego ha comenzado!');
+          renderAll();
+          break;
+
+        case 'ataque': {
+          const criticoTag = data.critico ? ' 💥 ¡CRÍTICO!' : '';
+          addEvent('ataque', '⚔️',
+            `${data.atacante} atacó a ${data.monstruo} — ${data.dano} dmg${criticoTag} (${data.hp_restante} HP restante)`
+          );
+          flashMonster(data.monstruo);
+          break;
+        }
+
+        case 'monstruo_eliminado':
+          addEvent('muerte', '💀',
+            `${data.eliminado_por} eliminó a ${data.monstruo} (+${data.puntos_ganados} pts)`
+          );
+          break;
+
+        case 'jugador_desconectado':
+          addEvent('sistema', '📵', `${data.nombre} se desconectó (esperando ${data.gracia}s...)`);
+          break;
+
+        case 'jugador_reconectado':
+          addEvent('sistema', '🔁', `${data.nombre} reconectó`);
+          break;
+
+        case 'estado_juego':
+          state.monstruos   = data.monstruos;
+          state.turnoActual = data.turno_actual;
+          state.fase        = data.fase;
+          state.turnoIndex++;
+          // Reemplazar lista completa para que jugadores que salieron desaparezcan
+          state.jugadores = {};
+          data.jugadores.forEach(j => { state.jugadores[j.id] = j; });
+          renderAll();
+          break;
+
+        case 'intercambio':
+          if (data.exitoso) {
+            data.jugadores.forEach(j => { state.jugadores[j.id] = j; });
+            addEvent('puntos', '💰', 'Intercambio de puntos realizado');
+            renderPlayers();
+          } else {
+            addEvent('sistema', '❌', 'Intercambio rechazado');
+          }
+          break;
+
+        case 'fin_juego':
+          state.fase = 'fin';
+          data.jugadores.forEach(j => { state.jugadores[j.id] = j; });
+          addEvent('sistema', '🏆', `¡Juego terminado! Ganador: ${data.ganador}`);
+          renderAll();
+          showWinner(data.ganador);
+          break;
+
+        case 'error':
+          addEvent('sistema', '❌', `Error: ${data.mensaje}`);
+          break;
+      }
+    }
+
+    // ─── Render Principal ──────────────────────────────────────
+    function renderAll() {
+      renderMonsters();
+      renderPlayers();
+      renderTurno();
+      updateFaseBadge();
+      updateStats();
+    }
+
+    // ─── Render Monstruos ──────────────────────────────────────
+    function renderMonsters() {
+      const list = document.getElementById('monsters-list');
+      if (state.monstruos.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">🌑</div>Sin monstruos aún</div>';
+        return;
+      }
+
+      list.innerHTML = state.monstruos.map(m => {
+        const pct  = Math.max(0, (m.hp_actual / m.hp_max) * 100);
+        const dead = m.eliminado || m.hp_actual <= 0;
+        const barColor = pct > 50 ? '#39ff14' : pct > 25 ? '#ffd700' : '#ff073a';
+
+        return `
+          <div class="monster-card ${dead ? 'dead' : ''}" id="monster-${m.id}">
+            <div class="monster-row">
+              <div class="monster-name">
+                <span class="monster-emoji">${m.emoji}</span>
+                ${m.nombre}
+              </div>
+              <div class="monster-hp">${dead ? '0' : m.hp_actual}/${m.hp_max} HP</div>
+            </div>
+            ${dead
+              ? `<div class="skull-overlay">💀 Eliminado</div>`
+              : `<div class="hp-track">
+                   <div class="hp-fill" style="width:${pct}%; background:${barColor}"></div>
+                 </div>
+                 <div class="monster-pts">+${m.puntos} pts al eliminar</div>`
+            }
+          </div>`;
+      }).join('');
+    }
+
+    // ─── Render Jugadores ──────────────────────────────────────
+    function renderPlayers() {
+      const list   = document.getElementById('players-list');
+      const jugs   = Object.values(state.jugadores);
+
+      if (jugs.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">🌑</div>Nadie conectado aún</div>';
+        return;
+      }
+
+      const sorted = [...jugs].sort((a, b) => b.puntos - a.puntos);
+
+      list.innerHTML = sorted.map((j, i) => {
+        const isActive  = j.id === state.turnoActual;
+        const prev      = prevPuntos[j.id] ?? j.puntos;
+        const diff      = j.puntos - prev;
+        const diffHtml  = diff > 0
+          ? `<span class="pts-change up">+${diff}</span>`
+          : diff < 0
+            ? `<span class="pts-change down">${diff}</span>`
+            : '';
+
+        prevPuntos[j.id] = j.puntos;
+
+        return `
+          <div class="player-row ${isActive ? 'active-turn' : ''}" id="player-${j.id}">
+            <div class="player-rank">${MEDALS[i] ?? `${i+1}`}</div>
+            <div class="player-info">
+              <div class="player-name">${isActive ? '⭐ ' : ''}${j.nombre}</div>
+              <div class="player-meta">HP: ${j.hp} · Armas: ${j.armas?.join(', ') || '—'}</div>
+            </div>
+            <div class="player-pts">${j.puntos} pts${diffHtml}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ─── Render Turno ──────────────────────────────────────────
+    function renderTurno() {
+      const banner  = document.getElementById('turno-banner');
+      const jugador = state.jugadores[state.turnoActual];
+
+      if (!jugador) {
+        banner.textContent = '⏳ Esperando que inicie el juego...';
+        banner.classList.remove('activo');
+        return;
+      }
+
+      banner.classList.add('activo');
+      banner.innerHTML = state.fase === 'fin'
+        ? '🏆 ¡Juego finalizado!'
+        : `⚔️ Turno de <strong>${jugador.nombre}</strong>`;
+    }
+
+    // ─── Fase Badge ────────────────────────────────────────────
+    function updateFaseBadge() {
+      const badge = document.getElementById('fase-badge');
+      const MAP = {
+        espera: '⏳ Espera',
+        juego:  '🎮 En juego',
+        fin:    '🏆 Finalizado',
+      };
+      badge.textContent = MAP[state.fase] ?? state.fase;
+      badge.className   = `fase-badge ${state.fase}`;
+    }
+
+    // ─── Stats Pills ───────────────────────────────────────────
+    function updateStats() {
+      const vivos = state.monstruos.filter(m => !m.eliminado && m.hp_actual > 0).length;
+      document.getElementById('stat-jugadores').textContent = Object.keys(state.jugadores).length;
+      document.getElementById('stat-monstruos').textContent = state.monstruos.length ? vivos : '—';
+      document.getElementById('stat-turno').textContent     = state.turnoIndex > 0 ? `#${state.turnoIndex}` : '#—';
+    }
+
+    // ─── Connection Badge ──────────────────────────────────────
+    function setBadge(type, text) {
+      const badge = document.getElementById('conn-badge');
+      const label = document.getElementById('conn-text');
+      badge.className = `badge ${type}`;
+      label.textContent = text;
+    }
+
+    // ─── Event Feed ────────────────────────────────────────────
+    function addEvent(tipo, icon, text) {
+      const list = document.getElementById('eventos-list');
+
+      // Quita empty state
+      const empty = list.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      const now  = new Date();
+      const time = now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      const item = document.createElement('div');
+      item.className = `event-item tipo-${tipo}`;
+      item.innerHTML = `
+        <span class="event-icon">${icon}</span>
+        <span class="event-text">${text}</span>
+        <span class="event-time">${time}</span>`;
+
+      list.insertBefore(item, list.firstChild);
+
+      // Máximo 50 eventos
+      while (list.children.length > 50) list.removeChild(list.lastChild);
+    }
+
+    // ─── Flash de daño en monstruo ─────────────────────────────
+    function flashMonster(nombreMonstruo) {
+      const m = state.monstruos.find(m => m.nombre === nombreMonstruo);
+      if (!m) return;
+      const el = document.getElementById(`monster-${m.id}`);
+      if (!el) return;
+      el.classList.remove('hit');
+      void el.offsetWidth; // reflow para reiniciar animación
+      el.classList.add('hit');
+      setTimeout(() => el.classList.remove('hit'), 400);
+    }
+
+    // ─── Winner Overlay ────────────────────────────────────────
+    function showWinner(nombre) {
+      document.getElementById('winner-name').textContent = nombre;
+
+      const sorted = Object.values(state.jugadores).sort((a, b) => b.puntos - a.puntos);
+      const scoresEl = document.getElementById('winner-scores');
+      scoresEl.innerHTML = sorted.map((j, i) => `
+        <div class="winner-score-row">
+          <span class="winner-medal">${MEDALS[i] ?? `${i+1}.`}</span>
+          <span class="winner-player-name">${j.nombre}</span>
+          <span class="winner-player-pts">${j.puntos} pts</span>
+        </div>`).join('');
+
+      document.getElementById('winner-overlay').classList.add('visible');
+    }
+
+    // ─── Helper: obtener nombre de jugador por ID ──────────────
+    function getNombre(id) {
+      return state.jugadores[id]?.nombre ?? id;
+    }
+
+    // ─── Iniciar ───────────────────────────────────────────────
+    conectar();
+  </script>
+</body>
+</html>

@@ -1,3 +1,11 @@
+/**
+ * LobbyScreen.js
+ * Sala de espera antes de iniciar la partida.
+ *
+ * Muestra los jugadores conectados en tiempo real. Cualquier jugador puede
+ * pulsar "Iniciar Juego" cuando hay 2 o más participantes. También permite
+ * navegar a la pantalla de Alianzas para formar equipos antes de empezar.
+ */
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, Animated, Easing } from 'react-native';
 import { useGame } from '../context/GameContext';
